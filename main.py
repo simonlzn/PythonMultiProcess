@@ -93,6 +93,3 @@ if __name__ == '__main__':
     channel.basic_consume(callback, queue=queue_name, no_ack=True)
     
     channel.start_consuming()
-    
-    
-    
