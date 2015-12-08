@@ -2,6 +2,7 @@ import message_itk2rabbitmq
 import sender
 import volume_reconstruction_3D
 import volume_slicing_3D
+import sys
 
 class Pipeline():
     def __init__(self):
@@ -26,8 +27,9 @@ class Pipeline():
         message_sender = sender.Sender()
         message_sender.send(message.create_message())
         
-    def exectue(self):
-        print(self.__data)
+    def execute(self):
+        print("start execute")
+        sys.stdout.flush()
         
         if self.__data["func"] == "reconstruct":
             print("reconstruct")
@@ -46,12 +48,14 @@ class Pipeline():
             
         elif self.__data["func"] == "slicing":
             print("slicing")
+            sys.stdout.flush()
             
             volume_coord = str(self.__data["views"])
             volume_coord_transverse, volume_coord_coronal, volume_coord_sagittal = volume_coord.split(',')
             volume_coord = (int(volume_coord_transverse),int(volume_coord_coronal),int(volume_coord_sagittal))
             
             print(volume_coord)
+            sys.stdout.flush()
             
             volume_slicing_3D_filter = volume_slicing_3D.Volume_Slicing_3D()
             volume_slicing_3D_filter.set_volume_coord(volume_coord)
@@ -59,12 +63,10 @@ class Pipeline():
             volume_slicing_3D_filter.update()
             
             slicing_info = volume_slicing_3D_filter.get_info()
-        
-            slicing_info_num = len(slicing_info)
             
-            for i in range(0,slicing_info_num):
-                self.__info = slicing_info[i]
-                self.__send_message()
+            self.__info = slicing_info
+            self.__send_message()
             
-            
+            print("slicing done")
+            sys.stdout.flush()
     

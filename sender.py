@@ -5,9 +5,11 @@ class Sender(object):
         connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost'))
         channel = connection.channel()
         
-        channel.queue_declare(queue='queue1', durable='false')
+        channel.exchange_declare(exchange='java')
         
-        channel.basic_publish(exchange='', routing_key='queue1', body=message)
+        channel.queue_declare(queue='queue1',durable=True) 
+        
+        channel.basic_publish(exchange='java', routing_key='queue1', body=message)
         
         print("[x] Sent "+message)
         
