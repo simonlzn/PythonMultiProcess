@@ -40,14 +40,7 @@ class Dicom_2D_Series_Read():
         
         series_identifier = series_uid[0]
         
-        file_names = name_generator.GetFileNames(series_identifier)
-        
-        # sort file names
-        file_names = list(file_names)
-        file_names.sort()
-        file_names = tuple(file_names)
-        
-        self.__file_names = file_names
+        self.__file_names = name_generator.GetFileNames(series_identifier)
         
         reader.SetFileNames(self.__file_names)
         reader.Update()
