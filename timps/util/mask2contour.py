@@ -1,71 +1,63 @@
-# convert mask to contour (3D)
-# Subrahmanyam Gorthi, Meritxel Bach Cuadra, Jean-Philippe Thiran, Exporting Contours to DICOM-RT Structure Set, 2009 (http://www.insight-journal.org/browse/publication/316)
-
 import itk
 
-class Mask2Contour_3D:
+class Mask2Contour():
     def __init__(self):
         pass
     
-    def read_mask(self,mask):
-        self.__mask = mask
+    def read_segmented_volume(self,vol_segmented):
+        self.__vol_segmented = vol_segmented
         
-    def set_contour_value(self,value):
-        self.__contour_value = value
-        
-    def set_contour_file_directory(self,dir):
-        self.__contour_file_dir = dir
+    def get_contoured_volume(self):
+        return self.__vol_contoured
     
-    def update(self):
-        spacing = self.__mask.GetOutput().GetSpacing()
-        
-        contour_extractor = itk.ContourExtractor2DImageFilter[itk.Image.SS2].New()
-        contour_extractor.SetContourValue(self.__contour_value)
-        contour_extractor.ReverseContourOrientationOn()
-        
-        region = self.__mask.GetOutput().GetLargestPossibleRegion()
-        
-        size = region.GetSize()
-        
-        number_of_slices = size[2]
-        
-        # only one axial slice at a time is considered
-        size[2] = 0
-        
-        slice_region = itk.ImageRegion[3]()
-        slice_region.SetSize(size)
-        start = region.GetIndex()
-        
-        
-        slice_extractor = itk.ExtractImageFilter[itk.Image.SS3,itk.Image.SS2].New()
-        
-        for current_slice in range(0,number_of_slices):
-            start[0] = 0
-            start[1] = 0
-            start[2] = current_slice
+    def __extract_slice(self,slice_id):
+        slice_plane = itk.Image[itk.UC,2].New()
             
-            slice_region.SetIndex(start)
-            
-            slice_extractor.SetExtractionRegion(slice_region)
-            slice_extractor.SetInput(self.__mask.GetOutput())
-            contour_extractor.SetInput(slice_extractor.GetOutput())
-            
-            contour_extractor.Update()
-            
-            self.write_contour_vertices(self.__contour_file_dir,contour_extractor,current_slice,)
-            
-            
-    def write_contour_vertices(self,dir,contour_extractor,current_slice):
-        pass
+        slice_region = itk.ImageRegion[2]()
+        slice_region.SetSize((int(self.__vol_size[0]),int(self.__vol_size[1])))
+        slice_region.SetIndex((0,0))
+        
+        slice_plane.SetRegions(slice_region)
+        slice_plane.Allocate()
+        
+        for i in xrange(self.__vol_size[0]):
+            for j in xrange(self.__vol_size[1]):
+                idx = (i,j)
+                val = self.__vol_segmented.GetPixel((i,j,slice_id))
+                slice_plane.SetPixel(idx,val)
+                
+        return slice_plane
     
-    def write_common_data(self):
-        pass
+    def __segment2contour(self,segment):
+        # binary contour
+        contour = itk.BinaryContourImageFilter[itk.Image.UC2,itk.Image.UC2].New()
+        contour.SetInput(segment)
+        contour.SetBackgroundValue(0)
+        contour.SetForegroundValue(1)
+        contour.Update()
+        
+        return contour.GetOutput()
     
-    def write_vertex_coordinate(self):
-        pass
+    def __merge_slice(self,slice_id,slice_plane):
+        for i in xrange(self.__vol_size[0]):
+            for j in xrange(self.__vol_size[1]):
+                idx = (i,j,slice_id)
+                val = slice_plane.GetPixel((i,j))
+                self.__vol_contoured.SetPixel(idx,val)
     
-    def write_last_vertex_coordinate(self):
-        pass
-    
-    def append_text_file(self):
-        pass
+    def execute(self):
+        self.__vol_size = self.__vol_segmented.GetLargestPossibleRegion().GetSize()
+        
+        self.__vol_contoured = self.__vol_segmented
+        
+        for k in xrange(self.__vol_size[2]):
+            # extract a slice from segmented volume
+            segment_slice = self.__extract_slice(k)
+            
+            # convert segment to contour
+            contour_slice = self.__segment2contour(segment_slice)
+                    
+            # merge all slice to generate a contour volume
+            self.__merge_slice(k, contour_slice)
+            
+        

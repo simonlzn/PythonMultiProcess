@@ -20,7 +20,7 @@ class Message_ITK2RabbitMQ():
         
     def create_message(self):
         #message_str = "{\"key\":\""+self.__key+"\",\"status\":\""+self.__status+"\",\"info\":\"{"+self.__info+"}\"}"  
-        message_str = "{\"key\":\""+self.__key+"\",\"status\":\""+self.__status+"\",\"info\":["+self.__info+"]}"        
+        message_str = "{\"key\":\""+self.__key+"\",\"status\":\""+self.__status+"\",\"info\":\"["+self.__info+"]\"}"        
             
         print(message_str)
         return message_str

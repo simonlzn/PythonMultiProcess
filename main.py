@@ -13,8 +13,7 @@ def callback(ch, method, properties, body):
     process_id = str(input_data["id"])
     input_data_key = str(input_data["key"])
     
-    print("***")
-    print(dictionary)
+    #print(dictionary)
     
     if process_id in dictionary:
         return
@@ -29,11 +28,7 @@ def new_process(queue_name,key, body):
     #senders = sender.Sender()
     #senders.send('{\"key\":\"' + key + '\"}')
     
-    
-    
     connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost'))
-
-    #pipeline_unit = pipeline.Pipeline()
     
     global pipeline_unit
     pipeline_unit = pipeline.Pipeline()
@@ -45,8 +40,6 @@ def new_process(queue_name,key, body):
     pipeline_unit.set_data(input_data)
     pipeline_unit.set_data_key(input_data_key)
     pipeline_unit.execute()
-    #print(pipeline_unit)
-    print("xxx")
     
     channel = connection.channel()
     
@@ -71,9 +64,6 @@ def new_process_callback(ch, method, properties, body):
     input_data_id = str(input_data["id"])
     input_data_key = str(input_data["key"])
     
-    print("!!!")
-    print(input_data)
-    
     
     #print("id= ",input_data_id)
     #senders.send('{\"key\":\"' + input_data_key + '\",\"data\":\"'+str(input_data)+'\"}')
@@ -82,7 +72,7 @@ def new_process_callback(ch, method, properties, body):
     
     #if not 'pipeline_unit' in globals():
     #    pipeline_unit = pipeline.Pipeline()
-      
+    
     sys.stdout.flush()
     
     pipeline_unit.set_process_id(input_data_id)

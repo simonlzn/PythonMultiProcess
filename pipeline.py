@@ -1,14 +1,17 @@
 import message_itk2rabbitmq
 import sender
-import volume_reconstruction_3D
-import volume_slicing_3D
+
+from timps.func import volume_reconstruction_3D
+from timps.func import volume_slicing_3D
+from timps.func import region_growing_segmentation_3D
+
 import sys
+import itk
 
 class Pipeline():
     def __init__(self):
         self.__errors_sign = False
-    
-    
+      
     def set_data_key(self,data_key):
         self.__data_key = data_key
         
@@ -31,21 +34,23 @@ class Pipeline():
         print("start execute")
         sys.stdout.flush()
         
+        # reconstruct 3D volume
         if self.__data["func"] == "reconstruct":
             print("reconstruct")
             
             volume_reconstruction_3D_filter = volume_reconstruction_3D.Volume_Reconstruction_3D()
             volume_reconstruction_3D_filter.set_folder_path(str(self.__data["folderPath"]))
-            volume_reconstruction_3D_filter.update()
+            volume_reconstruction_3D_filter.execute()
             
             self.__volume = volume_reconstruction_3D_filter.get_volume()
             self.__info = volume_reconstruction_3D_filter.get_info()
             
             self.__send_message()
             
-            self.__info = ""
+            print("reconstruct done")
+            sys.stdout.flush()
             
-            
+        # slicing 3D volume
         elif self.__data["func"] == "slicing":
             print("slicing")
             sys.stdout.flush()
@@ -54,13 +59,10 @@ class Pipeline():
             volume_coord_transverse, volume_coord_coronal, volume_coord_sagittal = volume_coord.split(',')
             volume_coord = (int(volume_coord_transverse),int(volume_coord_coronal),int(volume_coord_sagittal))
             
-            print(volume_coord)
-            sys.stdout.flush()
-            
             volume_slicing_3D_filter = volume_slicing_3D.Volume_Slicing_3D()
             volume_slicing_3D_filter.set_volume_coord(volume_coord)
             volume_slicing_3D_filter.set_volume(self.__volume)
-            volume_slicing_3D_filter.update()
+            volume_slicing_3D_filter.execute()
             
             slicing_info = volume_slicing_3D_filter.get_info()
             
@@ -68,5 +70,28 @@ class Pipeline():
             self.__send_message()
             
             print("slicing done")
+            sys.stdout.flush()
+        
+        # region growing segmentation
+        elif self.__data["func"] == "region_growing":
+            print("region growing segmentation")
+            sys.stdout.flush()
+            
+            seed_coord = str(self.__data["seed"])
+            seed_coord_transverse, seed_coord_coronal, seed_coord_sagittal = seed_coord.split(',')
+            
+            region_growing_segmentation_3D_filter = region_growing_segmentation_3D.Region_Growing_Segmentation_3D()
+            region_growing_segmentation_3D_filter.set_volume(self.__volume)
+            region_growing_segmentation_3D_filter.set_seed((int(seed_coord_transverse),int(seed_coord_coronal),int(seed_coord_sagittal)))
+            region_growing_segmentation_3D_filter.set_threshold((-1000,-200))
+            region_growing_segmentation_3D_filter.execute()
+            
+            # writer
+            writer = itk.ImageFileWriter[itk.Image.UC3].New()
+            writer.SetFileName('/home/zshen/workspace/contour.dcm')
+            writer.SetInput(region_growing_segmentation_3D_filter.get_contoured_volume())
+            writer.Update()
+            
+            print("region growing segmentation done")
             sys.stdout.flush()
     

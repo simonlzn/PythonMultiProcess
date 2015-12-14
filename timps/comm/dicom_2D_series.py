@@ -25,7 +25,7 @@ class Dicom_2D_Series_Read():
     def set_dicom_dir(self,dicom_dir):
         self.__dicom_dir = dicom_dir
     
-    def update(self):
+    def execute(self):
         dicom_io = itk.GDCMImageIO.New()
         
         # set image type to signed short (16-bits/pixel)
@@ -41,6 +41,7 @@ class Dicom_2D_Series_Read():
         series_identifier = series_uid[0]
         
         file_names = name_generator.GetFileNames(series_identifier)
+        
         # sort file names
         file_names = list(file_names)
         file_names.sort()
