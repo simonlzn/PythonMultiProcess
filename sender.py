@@ -2,7 +2,8 @@ import pika
 
 class Sender(object):
     def send(self, message):
-        connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost'))
+        credentials = pika.PlainCredentials('sphic', 'sphic')
+        connection = pika.BlockingConnection(pika.ConnectionParameters(host='10.11.12.33', credentials= credentials))
         channel = connection.channel()
         
         channel.exchange_declare(exchange='java')

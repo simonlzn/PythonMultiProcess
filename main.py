@@ -13,7 +13,11 @@ def callback(ch, method, properties, body):
     process_id = str(input_data["id"])
     input_data_key = str(input_data["key"])
     
+    print(body)
     #print(dictionary)
+    
+    senders = sender.Sender()
+    senders.send('{\"key\":\"' + input_data_key + '\"}')
     
     if process_id in dictionary:
         return
@@ -27,8 +31,8 @@ def new_process(queue_name,key, body):
     print("new process")
     #senders = sender.Sender()
     #senders.send('{\"key\":\"' + key + '\"}')
-    
-    connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost'))
+    credentials = pika.PlainCredentials('sphic', 'sphic')
+    connection = pika.BlockingConnection(pika.ConnectionParameters(host='10.11.12.33', credentials= credentials))
     
     global pipeline_unit
     pipeline_unit = pipeline.Pipeline()
@@ -84,7 +88,8 @@ def new_process_callback(ch, method, properties, body):
 
 
 if __name__ == '__main__':   
-    connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost'))
+    credentials = pika.PlainCredentials('sphic', 'sphic')
+    connection = pika.BlockingConnection(pika.ConnectionParameters(host='10.11.12.33', credentials= credentials))
     channel = connection.channel()
     channel.exchange_declare(exchange='itk', type='topic', durable=False)
     queue_unit = channel.queue_declare(exclusive=True)

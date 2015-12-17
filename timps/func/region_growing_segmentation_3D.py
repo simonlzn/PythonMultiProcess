@@ -22,6 +22,10 @@ class Region_Growing_Segmentation_3D():
         region_growing_segmentation.execute()
         
         self.__contoured_volume = region_growing_segmentation.get_contour()
+        self.__segmented_volume = region_growing_segmentation.get_segmented_volume()
         
     def get_contoured_volume(self):
         return self.__contoured_volume
+    
+    def get_segmented_volume(self):
+        return self.__segmented_volume

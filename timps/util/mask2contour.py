@@ -44,11 +44,26 @@ class Mask2Contour():
                 idx = (i,j,slice_id)
                 val = slice_plane.GetPixel((i,j))
                 self.__vol_contoured.SetPixel(idx,val)
+                
+    def __create_contoured_volume(self,vol):
+        vol_contoured = itk.Image[itk.UC,3].New()
+        
+        vol_contoured_region = itk.ImageRegion[3]()
+        vol_contoured_region.SetSize(vol.GetLargestPossibleRegion().GetSize())
+        vol_contoured_region.SetIndex((0,0,0))
+        
+        vol_contoured.SetRegions(vol_contoured_region)
+        vol_contoured.SetSpacing(vol.GetSpacing())
+        vol_contoured.SetOrigin(vol.GetOrigin())
+        vol_contoured.SetDirection(vol.GetDirection())
+        vol_contoured.Allocate()
+        
+        return vol_contoured
     
     def execute(self):
         self.__vol_size = self.__vol_segmented.GetLargestPossibleRegion().GetSize()
         
-        self.__vol_contoured = self.__vol_segmented
+        self.__vol_contoured = self.__create_contoured_volume(self.__vol_segmented)
         
         for k in xrange(self.__vol_size[2]):
             # extract a slice from segmented volume
