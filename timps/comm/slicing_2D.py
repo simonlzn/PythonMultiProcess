@@ -42,11 +42,11 @@ class Slicing_2D:
         for row in xrange(self.__row_size):
             for col in xrange(self.__column_size):
                 if self.__view == "transverse":
-                    val = self.__vol.GetOutput().GetPixel((row,col,self.__slice_id))
+                    val = self.__vol.GetOutput().GetPixel((col,row,self.__slice_id)) # row, col, slice_id
                 elif self.__view == "coronal":
-                    val = self.__vol.GetOutput().GetPixel((row,self.__slice_id,col))
+                    val = self.__vol.GetOutput().GetPixel((row,self.__slice_id,col)) # row slice_id, col
                 elif self.__view == "sagittal":
-                    val = self.__vol.GetOutput().GetPixel((self.__slice_id,row,col))
+                    val = self.__vol.GetOutput().GetPixel((self.__slice_id,row,col)) # slice_id, row, col
                 
                 voxel_values += str(val)
                 voxel_values += ","

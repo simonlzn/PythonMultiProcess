@@ -13,11 +13,11 @@ def callback(ch, method, properties, body):
     process_id = str(input_data["id"])
     input_data_key = str(input_data["key"])
     
-    print(body)
+    #print(body)
     #print(dictionary)
     
-    senders = sender.Sender()
-    senders.send('{\"key\":\"' + input_data_key + '\"}')
+    #senders = sender.Sender()
+    #senders.send('{\"key\":\"' + input_data_key + '\"}')
     
     if process_id in dictionary:
         return

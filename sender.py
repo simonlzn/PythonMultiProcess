@@ -6,7 +6,7 @@ class Sender(object):
         connection = pika.BlockingConnection(pika.ConnectionParameters(host='10.11.12.33', credentials= credentials))
         channel = connection.channel()
         
-        channel.exchange_declare(exchange='java')
+        channel.exchange_declare(exchange='java',type='fanout')
         
         channel.queue_declare(queue='queue1',durable=True) 
         

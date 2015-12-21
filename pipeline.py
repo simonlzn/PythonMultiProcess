@@ -3,7 +3,8 @@ import sender
 
 from timps.func import volume_reconstruction_3D
 from timps.func import volume_slicing_3D
-from timps.func import region_growing_segmentation_3D
+from timps.func import structure_volume_reconstruction_3D
+#from timps.func import region_growing_segmentation_3D
 
 import sys
 import itk
@@ -19,7 +20,7 @@ class Pipeline():
         self.__process_id = process_id
         
     def set_data(self,data):
-        self.__data = data
+        self.__data = datadim
         
     def __send_message(self):
         message = message_itk2rabbitmq.Message_ITK2RabbitMQ()
@@ -42,9 +43,20 @@ class Pipeline():
             volume_reconstruction_3D_filter.set_folder_path(str(self.__data["folderPath"]))
             volume_reconstruction_3D_filter.execute()
             
-            self.__volume = volume_reconstruction_3D_filter.get_volume()
-            self.__info = volume_reconstruction_3D_filter.get_info()
+            # write DICOM (3D volume)
+            writer = itk.ImageFileWriter[itk.Image.SS3].New()
+            writer.SetFileName("./volume.dcm")
+            writer.SetInput(volume_reconstruction_3D_filter.get_volume())
+            writer.Update()
             
+            # write DICOM (structure volume)
+            writer = itk.ImageFileWriter[itk.Image.UC3].New()
+            writer.SetFileName("./structure.dcm")
+            writer.SetInput(volume_reconstruction_3D_filter.get_structure_volume())
+            writer.Update()
+            
+            # send message
+            self.__info = volume_reconstruction_3D_filter.get_info()
             self.__send_message()
             
             print("reconstruct done")
@@ -59,19 +71,55 @@ class Pipeline():
             volume_coord_transverse, volume_coord_coronal, volume_coord_sagittal = volume_coord.split(',')
             volume_coord = (int(volume_coord_transverse),int(volume_coord_coronal),int(volume_coord_sagittal))
             
+            # read DICOM (3D volume)
+            reader = itk.ImageFileReader[itk.Image.SS3].New()
+            reader.SetFileName("./volume.dcm")
+            reader.Update()
+            
             volume_slicing_3D_filter = volume_slicing_3D.Volume_Slicing_3D()
             volume_slicing_3D_filter.set_volume_coord(volume_coord)
-            volume_slicing_3D_filter.set_volume(self.__volume)
+            volume_slicing_3D_filter.set_volume(reader.GetOutput())
             volume_slicing_3D_filter.execute()
             
-            slicing_info = volume_slicing_3D_filter.get_info()
-            
-            self.__info = slicing_info
+            self.__info = volume_slicing_3D_filter.get_info()
             self.__send_message()
             
             print("slicing done")
             sys.stdout.flush()
+            
+        # reconstruct 3D structure volume
+        elif self.__data["func"] == "reconstruct_structure":
+            print("reconstruct structure")
+            sys.stdout.flush()
+            
+            structure_id = int(self.__data["structure_id"])
+            structure_coords = self.__data["data"]
+            
+            # read DICOM (3D structure volume)
+            reader = itk.ImageFileReader[itk.Image.SS3].New()
+            reader.SetFileName("./structure.dcm")
+            reader.Update()
+            
+            structure_volume_reconstruction_3D_filter = structure_volume_reconstruction_3D.Structure_Volume_Reconstruction_3D()
+            structure_volume_reconstruction_3D_filter.set_structure_volume(reader.GetOutput())
+            structure_volume_reconstruction_3D_filter.set_structure_index(structure_id)
+            structure_volume_reconstruction_3D_filter.set_structure_coordinates(structure_coords)
+            structure_volume_reconstruction_3D_filter.execute()
+            
+            # write DICOM (3D structure volume)
+            writer = itk.ImageFileWriter[itk.Image.UC3].New()
+            writer.SetFileName("./structure.dcm")
+            writer.SetInput(structure_volume_reconstruction_3D_filter.get_structure_volume())
+            writer.Update()
+            
+            # send message
+            self.__info = structure_volume_reconstruction_3D_filter.get_info()
+            self.__send_message()
         
+            print("reconstruct structure done")
+            sys.stdout.flush()
+        
+        '''
         # region growing segmentation
         elif self.__data["func"] == "region_growing":
             print("region growing segmentation")
@@ -94,4 +142,4 @@ class Pipeline():
             
             print("region growing segmentation done")
             sys.stdout.flush()
-    
+        '''
