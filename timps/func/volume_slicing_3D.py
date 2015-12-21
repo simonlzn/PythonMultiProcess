@@ -36,8 +36,8 @@ class Volume_Slicing_3D():
         volume_coord_coronal = self.__volume_coord[1]
         volume_coord_sagittal = self.__volume_coord[2]
         
-        volume_size = self.__volume.GetOutput().GetLargestPossibleRegion().GetSize()
-        volume_spacing = self.__volume.GetOutput().GetSpacing()
+        volume_size = self.__volume.GetLargestPossibleRegion().GetSize()
+        volume_spacing = self.__volume.GetSpacing()
         
         transverse_slice_info = self.__do_slicing(volume_coord_transverse,'transverse',volume_size[0],volume_size[1],volume_spacing[0],volume_spacing[1])
         coronal_slice_info = self.__do_slicing(volume_coord_coronal,'coronal',volume_size[0],volume_size[2],volume_spacing[0],volume_spacing[2])
