@@ -20,7 +20,7 @@ class Pipeline():
         self.__process_id = process_id
         
     def set_data(self,data):
-        self.__data = datadim
+        self.__data = data
         
     def __send_message(self):
         message = message_itk2rabbitmq.Message_ITK2RabbitMQ()
