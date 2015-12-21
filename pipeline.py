@@ -46,7 +46,7 @@ class Pipeline():
             # write DICOM (3D volume)
             writer = itk.ImageFileWriter[itk.Image.SS3].New()
             writer.SetFileName("./volume.dcm")
-            writer.SetInput(volume_reconstruction_3D_filter.get_volume())
+            writer.SetInput(volume_reconstruction_3D_filter.get_volume().GetOutput())
             writer.Update()
             
             '''
