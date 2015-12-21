@@ -47,7 +47,9 @@ class Volume_Reconstruction_3D():
         return reader.get_image()   
     
     def __copy_volume(self,size,spacing,origin,direction,pixel_type,dim):
-        image_type = itk.Image[pixel_type,dim]
+        #image_type = itk.Image[pixel_type,dim]
+        
+        image_type = itk.Image.UC3
         
         new_vol = itk.Image[image_type].New()
         
@@ -67,4 +69,4 @@ class Volume_Reconstruction_3D():
                     new_vol.SetPixel((i,j,k),0)
                     
         return new_vol
-        
+      
