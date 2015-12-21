@@ -49,12 +49,13 @@ class Pipeline():
             writer.SetInput(volume_reconstruction_3D_filter.get_volume())
             writer.Update()
             
+            '''
             # write DICOM (structure volume)
             writer = itk.ImageFileWriter[itk.Image.UC3].New()
             writer.SetFileName("./structure.dcm")
             writer.SetInput(volume_reconstruction_3D_filter.get_structure_volume())
             writer.Update()
-            
+            '''
             # send message
             self.__info = volume_reconstruction_3D_filter.get_info()
             self.__send_message()
@@ -86,7 +87,7 @@ class Pipeline():
             
             print("slicing done")
             sys.stdout.flush()
-            
+        '''    
         # reconstruct 3D structure volume
         elif self.__data["func"] == "reconstruct_structure":
             print("reconstruct structure")
@@ -118,7 +119,7 @@ class Pipeline():
         
             print("reconstruct structure done")
             sys.stdout.flush()
-        
+        '''
         '''
         # region growing segmentation
         elif self.__data["func"] == "region_growing":
