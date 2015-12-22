@@ -76,7 +76,7 @@ def new_process_callback(ch, method, properties, body):
     
     #if not 'pipeline_unit' in globals():
     #    pipeline_unit = pipeline.Pipeline()
-    
+    print(input_data)
     sys.stdout.flush()
     
     pipeline_unit.set_process_id(input_data_id)

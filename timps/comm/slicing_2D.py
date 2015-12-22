@@ -38,18 +38,19 @@ class Slicing_2D:
 
     def execute(self):
         voxel_values = ""
-        
-        for row in xrange(self.__row_size):
-            for col in xrange(self.__column_size):
+
+        for col in xrange(self.__column_size):
+            for row in xrange(self.__row_size):
                 if self.__view == "transverse":
-                    val = self.__vol.GetPixel((col,row,self.__slice_id)) # row, col, slice_id
+                    val = self.__vol.GetPixel((row,col,self.__slice_id)) 
                 elif self.__view == "coronal":
-                    val = self.__vol.GetPixel((row,self.__slice_id,col)) # row slice_id, col
+                    val = self.__vol.GetPixel((row,self.__slice_id,int(self.__column_size-col))) 
                 elif self.__view == "sagittal":
-                    val = self.__vol.GetPixel((self.__slice_id,row,col)) # slice_id, row, col
+                    val = self.__vol.GetPixel((self.__slice_id,row,int(self.__column_size-col))) 
                 
                 voxel_values += str(val)
                 voxel_values += ","
+        
                 
         voxel_values = voxel_values[:-1] 
         

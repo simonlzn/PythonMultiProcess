@@ -12,6 +12,7 @@ import itk
 class Pipeline():
     def __init__(self):
         self.__errors_sign = False
+        self.__vol = None
       
     def set_data_key(self,data_key):
         self.__data_key = data_key
@@ -33,6 +34,7 @@ class Pipeline():
         
     def execute(self):
         print("start execute")
+        print(self.__data)
         sys.stdout.flush()
         
         # reconstruct 3D volume
@@ -43,11 +45,14 @@ class Pipeline():
             volume_reconstruction_3D_filter.set_folder_path(str(self.__data["folderPath"]))
             volume_reconstruction_3D_filter.execute()
             
+            self.__vol = volume_reconstruction_3D_filter.get_volume()
+            
             # write DICOM (3D volume)
             writer = itk.ImageFileWriter[itk.Image.SS3].New()
             writer.SetFileName("./volume.dcm")
-            writer.SetInput(volume_reconstruction_3D_filter.get_volume().GetOutput())
+            writer.SetInput(volume_reconstruction_3D_filter.get_volume())
             writer.Update()
+            
             
             '''
             # write DICOM (structure volume)
@@ -72,14 +77,16 @@ class Pipeline():
             volume_coord_transverse, volume_coord_coronal, volume_coord_sagittal = volume_coord.split(',')
             volume_coord = (int(volume_coord_transverse),int(volume_coord_coronal),int(volume_coord_sagittal))
             
-            # read DICOM (3D volume)
-            reader = itk.ImageFileReader[itk.Image.SS3].New()
-            reader.SetFileName("./volume.dcm")
-            reader.Update()
+            if self.__vol == None:
+                # read DICOM (3D volume)
+                reader = itk.ImageFileReader[itk.Image.SS3].New()
+                reader.SetFileName("./volume.dcm")
+                reader.Update()
+                self.__vol = reader.GetOutput()
             
             volume_slicing_3D_filter = volume_slicing_3D.Volume_Slicing_3D()
             volume_slicing_3D_filter.set_volume_coord(volume_coord)
-            volume_slicing_3D_filter.set_volume(reader.GetOutput())
+            volume_slicing_3D_filter.set_volume(self.__vol)
             volume_slicing_3D_filter.execute()
             
             self.__info = volume_slicing_3D_filter.get_info()

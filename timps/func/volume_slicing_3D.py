@@ -40,8 +40,8 @@ class Volume_Slicing_3D():
         volume_spacing = self.__volume.GetSpacing()
         
         transverse_slice_info = self.__do_slicing(volume_coord_transverse,'transverse',volume_size[0],volume_size[1],volume_spacing[0],volume_spacing[1])
-        coronal_slice_info = self.__do_slicing(volume_coord_coronal,'coronal',volume_size[0],volume_size[2],volume_spacing[0],volume_spacing[2])
-        sagittal_slice_info = self.__do_slicing(volume_coord_sagittal,'sagittal',volume_size[1],volume_size[2],volume_spacing[1],volume_spacing[2])
+        coronal_slice_info = self.__do_slicing(volume_coord_coronal,'coronal',volume_size[0],volume_size[2],volume_spacing[2],volume_spacing[0]) 
+        sagittal_slice_info = self.__do_slicing(volume_coord_sagittal,'sagittal',volume_size[1],volume_size[2],volume_spacing[2],volume_spacing[0])
         
         
         self.__slice_info = str(transverse_slice_info) + "," + \

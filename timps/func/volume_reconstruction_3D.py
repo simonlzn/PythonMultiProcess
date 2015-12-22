@@ -13,7 +13,7 @@ class Volume_Reconstruction_3D():
         return self.__info
     
     def get_volume(self):
-        return self.__volume
+        return self.__volume.GetOutput()
     
     def get_structure_volume(self):
         return self.__structure_volume
@@ -47,14 +47,8 @@ class Volume_Reconstruction_3D():
         return reader.get_image()   
     
     '''
-    def __copy_volume(self,size,spacing,origin,direction,pixel_type,dim):
-        #image_type = itk.Image[pixel_type,dim]
-        
-        #image_type = itk.UC3
-        
-        #new_vol = itk.Image[image_type].New()
-        
-        new_vol = itk.Image[itk.UC,3].New()
+    def __copy_volume(self,size,spacing,origin,direction,pixel_type,dim):        
+        new_vol = itk.Image[pixel_type,dim].New()
         
         new_vol_region = itk.ImageRegion[dim]()
         new_vol_region.SetSize(size)
