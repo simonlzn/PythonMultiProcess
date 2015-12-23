@@ -1,17 +1,19 @@
 import message_itk2rabbitmq
 import sender
+import os
 
 from timps.func import volume_reconstruction_3D
 from timps.func import volume_slicing_3D
 from timps.func import structure_volume_reconstruction_3D
 #from timps.func import region_growing_segmentation_3D
 
+from timps.util import volume_base
+
 import sys
 import itk
 
 class Pipeline():
     def __init__(self):
-        self.__errors_sign = False
         self.__vol = None
       
     def set_data_key(self,data_key):
@@ -23,11 +25,11 @@ class Pipeline():
     def set_data(self,data):
         self.__data = data
         
-    def __send_message(self):
+    def __send_message(self,error_sign,info):
         message = message_itk2rabbitmq.Message_ITK2RabbitMQ()
         message.add_key(str(self.__data_key))
-        message.occur_errors(self.__errors_sign)
-        message.add_info(self.__info)
+        message.occur_errors(error_sign)
+        message.add_info(info)
         
         message_sender = sender.Sender()
         message_sender.send(message.create_message())
@@ -41,32 +43,34 @@ class Pipeline():
         if self.__data["func"] == "reconstruct":
             print("reconstruct")
             
-            volume_reconstruction_3D_filter = volume_reconstruction_3D.Volume_Reconstruction_3D()
-            volume_reconstruction_3D_filter.set_folder_path(str(self.__data["folderPath"]))
-            volume_reconstruction_3D_filter.execute()
+            folder_path = str(self.__data["folderPath"])
             
-            self.__vol = volume_reconstruction_3D_filter.get_volume()
-            
-            # write DICOM (3D volume)
-            writer = itk.ImageFileWriter[itk.Image.SS3].New()
-            writer.SetFileName("./volume.dcm")
-            writer.SetInput(volume_reconstruction_3D_filter.get_volume())
-            writer.Update()
-            
-            
-            '''
-            # write DICOM (structure volume)
-            writer = itk.ImageFileWriter[itk.Image.UC3].New()
-            writer.SetFileName("./structure.dcm")
-            writer.SetInput(volume_reconstruction_3D_filter.get_structure_volume())
-            writer.Update()
-            '''
-            # send message
-            self.__info = volume_reconstruction_3D_filter.get_info()
-            self.__send_message()
-            
-            print("reconstruct done")
-            sys.stdout.flush()
+            if os.path.exists(folder_path) == False:
+                info = "Error: DICOM series folder not find!"
+                error_sign = True
+                self.__send_message(error_sign,info)
+                return
+            else:
+                volume_reconstruction_3D_filter = volume_reconstruction_3D.Volume_Reconstruction_3D()
+                volume_reconstruction_3D_filter.set_folder_path(folder_path)
+                volume_reconstruction_3D_filter.execute()
+                
+                # send message
+                info = volume_reconstruction_3D_filter.get_info()
+                error_sign = volume_reconstruction_3D_filter.get_error_sign()
+                self.__send_message(error_sign,info)
+                
+                if error_sign == False:
+                    self.__vol = volume_reconstruction_3D_filter.get_volume()
+                    
+                    # write DICOM (3D volume)
+                    writer = itk.ImageFileWriter[itk.Image.SS3].New()
+                    writer.SetFileName("data/volume.nrrd")
+                    writer.SetInput(volume_reconstruction_3D_filter.get_volume())
+                    writer.Update()
+                
+                print("reconstruct done")
+                sys.stdout.flush()
             
         # slicing 3D volume
         elif self.__data["func"] == "slicing":
@@ -80,8 +84,14 @@ class Pipeline():
             if self.__vol == None:
                 # read DICOM (3D volume)
                 reader = itk.ImageFileReader[itk.Image.SS3].New()
-                reader.SetFileName("./volume.dcm")
-                reader.Update()
+                reader.SetFileName("data/volume.nrrd")
+                try:
+                    reader.Update()
+                except Exception as err:
+                    info = str(err)
+                    error_sign = True
+                    self.__send_message(error_sign, info)
+                    return
                 self.__vol = reader.GetOutput()
             
             volume_slicing_3D_filter = volume_slicing_3D.Volume_Slicing_3D()
@@ -89,44 +99,87 @@ class Pipeline():
             volume_slicing_3D_filter.set_volume(self.__vol)
             volume_slicing_3D_filter.execute()
             
-            self.__info = volume_slicing_3D_filter.get_info()
-            self.__send_message()
+            info = volume_slicing_3D_filter.get_info()
+            error_sign = volume_slicing_3D_filter.get_error_sign()
+            self.__send_message(error_sign,info)
             
             print("slicing done")
             sys.stdout.flush()
-        '''    
+        
         # reconstruct 3D structure volume
         elif self.__data["func"] == "reconstruct_structure":
             print("reconstruct structure")
             sys.stdout.flush()
             
             structure_id = int(self.__data["structure_id"])
-            structure_coords = self.__data["data"]
+            structure_coords = self.__data["coord"]
             
-            # read DICOM (3D structure volume)
-            reader = itk.ImageFileReader[itk.Image.SS3].New()
-            reader.SetFileName("./structure.dcm")
-            reader.Update()
+            if os.path.isfile("data/structure.nrrd"):
+                # read DICOM (3D structure volume)
+                reader = itk.ImageFileReader[itk.Image.SS3].New()
+                reader.SetFileName("data/structure.nrrd")
+                try:
+                    reader.Update()
+                except Exception as err:
+                    info = str(err)
+                    error_sign = True
+                    self.__send_message(error_sign, info)
+                    return
+                structure_vol = reader.GetOutput()
+            else:
+                if self.__vol == None:
+                    if os.path.exists('data/volume.nrrd'):
+                        # read DICOM (3D volume)
+                        reader = itk.ImageFileReader[itk.Image.SS3].New()
+                        reader.SetFileName("data/volume.nrrd")
+                        try:
+                            reader.Update()
+                        except Exception as err:
+                            info = str(err)
+                            error_sign = True
+                            self.__send_message(error_sign, info)
+                            return
+                        self.__vol = reader.GetOutput()
+                    else:
+                        info = "Error: reconstruct volume first!"
+                        error_sign = True
+                        self.__send_message(error_sign, info)
+                        return
+                
+                vol_base = volume_base.Volume_Base()
+                structure_vol = vol_base.copy_volume(self.__vol, itk.UC)
             
             structure_volume_reconstruction_3D_filter = structure_volume_reconstruction_3D.Structure_Volume_Reconstruction_3D()
-            structure_volume_reconstruction_3D_filter.set_structure_volume(reader.GetOutput())
+            structure_volume_reconstruction_3D_filter.set_structure_volume(structure_vol)
             structure_volume_reconstruction_3D_filter.set_structure_index(structure_id)
             structure_volume_reconstruction_3D_filter.set_structure_coordinates(structure_coords)
             structure_volume_reconstruction_3D_filter.execute()
             
-            # write DICOM (3D structure volume)
-            writer = itk.ImageFileWriter[itk.Image.UC3].New()
-            writer.SetFileName("./structure.dcm")
-            writer.SetInput(structure_volume_reconstruction_3D_filter.get_structure_volume())
-            writer.Update()
-            
             # send message
-            self.__info = structure_volume_reconstruction_3D_filter.get_info()
-            self.__send_message()
-        
+            info = structure_volume_reconstruction_3D_filter.get_info()
+            error_sign = structure_volume_reconstruction_3D_filter.get_error_sign()
+            self.__send_message(error_sign, info)        
+                
+            # write DICOM (3D structure volume)
+            if error_sign == False:
+                writer = itk.ImageFileWriter[itk.Image.UC3].New()
+                writer.SetFileName("data/structure.nrrd")
+                writer.SetInput(structure_volume_reconstruction_3D_filter.get_structure_volume())
+                writer.Update()
+            
             print("reconstruct structure done")
             sys.stdout.flush()
-        '''
+        
+        # slicing 3D structure volume
+        elif self.__data["func"] == "slicing_strucutre":
+            print("slicing structure")
+            sys.stdout.flush()
+            
+            
+            
+            print("slicing structure done")
+            sys.stdout.flush()
+        
         '''
         # region growing segmentation
         elif self.__data["func"] == "region_growing":

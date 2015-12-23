@@ -32,7 +32,8 @@ def new_process(queue_name,key, body):
     #senders = sender.Sender()
     #senders.send('{\"key\":\"' + key + '\"}')
     credentials = pika.PlainCredentials('sphic', 'sphic')
-    connection = pika.BlockingConnection(pika.ConnectionParameters(host='10.11.12.33', credentials= credentials))
+    #connection = pika.BlockingConnection(pika.ConnectionParameters(host='10.11.12.33', credentials= credentials))
+    connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost'))
     
     global pipeline_unit
     pipeline_unit = pipeline.Pipeline()
@@ -89,7 +90,8 @@ def new_process_callback(ch, method, properties, body):
 
 if __name__ == '__main__':   
     credentials = pika.PlainCredentials('sphic', 'sphic')
-    connection = pika.BlockingConnection(pika.ConnectionParameters(host='10.11.12.33', credentials= credentials))
+    #connection = pika.BlockingConnection(pika.ConnectionParameters(host='10.11.12.33', credentials= credentials))
+    connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost'))
     channel = connection.channel()
     channel.exchange_declare(exchange='itk', type='topic', durable=False)
     queue_unit = channel.queue_declare(exclusive=True)
